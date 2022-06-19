@@ -578,6 +578,20 @@ bool ofxImGui::AddSlider(ofParameter<float>& parameter, const char* format, floa
 }
 
 //--------------------------------------------------------------
+bool ofxImGui::AddDragFloatRange2(ofParameter<ofVec2f>& parameter, float speed ) {
+    
+    auto tmpRef = parameter.get();
+    if( ImGui::DragFloatRange2(GetUniqueName(parameter), &tmpRef.x, &tmpRef.y, speed, parameter.getMin().x, parameter.getMax().y, "Min:%.1f", "Max:%.1f", ImGuiSliderFlags_AlwaysClamp) ) {
+        
+        parameter.set(tmpRef);
+        return true;
+    }
+       
+    return false;
+}
+
+
+//--------------------------------------------------------------
 bool ofxImGui::AddRange(const std::string& name, ofParameter<int>& parameterMin, ofParameter<int>& parameterMax, int speed)
 {
 	auto tmpRefMin = parameterMin.get();

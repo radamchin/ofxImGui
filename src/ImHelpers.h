@@ -94,6 +94,10 @@ namespace ofxImGui
 
 	bool AddSlider(ofParameter<float>& parameter, const char* format = "%.3f", float power = 1.0f);
 
+
+    bool AddDragFloatRange2(ofParameter<ofVec2f>& parameter, float speed = 0.01 );
+
+    
 	bool AddRange(const std::string& name, ofParameter<int>& parameterMin, ofParameter<int>& parameterMax, int speed = 1);
 	bool AddRange(const std::string& name, ofParameter<float>& parameterMin, ofParameter<float>& parameterMax, float speed = 0.01f);
 #if OF_VERSION_MINOR >= 10
