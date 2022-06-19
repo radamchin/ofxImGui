@@ -414,18 +414,18 @@ bool ofxImGui::AddParameter(ofParameter<ofVec4f>& parameter)
 }
 
 //--------------------------------------------------------------
-bool ofxImGui::AddParameter(ofParameter<ofFloatColor>& parameter, bool alpha)
+bool ofxImGui::AddParameter(ofParameter<ofFloatColor>& parameter, bool alpha, ImGuiColorEditFlags flags )
 {
 	auto tmpRef = parameter.get();
 	if (alpha)
 	{
-		if (ImGui::ColorEdit4(GetUniqueName(parameter), &tmpRef.r))
+		if (ImGui::ColorEdit4(GetUniqueName(parameter), &tmpRef.r, flags))
 		{
 			parameter.set(tmpRef);
 			return true;
 		}
 	}
-	else if (ImGui::ColorEdit3(GetUniqueName(parameter), &tmpRef.r))
+	else if (ImGui::ColorEdit3(GetUniqueName(parameter), &tmpRef.r, flags))
 	{
 		parameter.set(tmpRef);
 		return true;
@@ -434,7 +434,7 @@ bool ofxImGui::AddParameter(ofParameter<ofFloatColor>& parameter, bool alpha)
 }
 
 //--------------------------------------------------------------
-bool ofxImGui::AddParameter(ofParameter<ofColor>& parameter, bool alpha)
+bool ofxImGui::AddParameter(ofParameter<ofColor>& parameter, bool alpha, ImGuiColorEditFlags flags )
 {
 	//auto tmpRef = parameter.get();
 
@@ -449,13 +449,13 @@ bool ofxImGui::AddParameter(ofParameter<ofColor>& parameter, bool alpha)
 
 	if (alpha)
 	{
-		if (ImGui::ColorEdit4(GetUniqueName(parameter), &tmpRef.r))
+		if (ImGui::ColorEdit4(GetUniqueName(parameter), &tmpRef.r, flags))
 		{
 			parameter.set(tmpRef);
 			return true;
 		}
 	}
-	else if (ImGui::ColorEdit3(GetUniqueName(parameter), &tmpRef.r))
+	else if (ImGui::ColorEdit3(GetUniqueName(parameter), &tmpRef.r, flags))
 	{
 		parameter.set(tmpRef);
 		return true;
