@@ -92,6 +92,7 @@ namespace ofxImGui
 	bool AddCombo(ofParameter<int>& parameter, std::vector<std::string> labels);
 	bool AddStepper(ofParameter<int>& parameter, int step = 1, int stepFast = 100);
 
+    bool AddSlider(ofParameter<int>& parameter, const std::string selectionName = "");
 	bool AddSlider(ofParameter<float>& parameter, const char* format = "%.3f", float power = 1.0f);
 
 
