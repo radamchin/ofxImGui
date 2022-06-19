@@ -596,6 +596,29 @@ bool ofxImGui::AddSlider(ofParameter<int>& parameter, const std::string selectio
     }
     return false;
 }
+
+//--------------------------------------------------------------
+bool ofxImGui::AddDrag(ofParameter<float>& parameter, float speed)
+{
+    auto tmpRef = parameter.get();
+    if (ImGui::DragFloat(ofxImGui::GetUniqueName(parameter.getName()), &tmpRef, speed, parameter.getMin(), parameter.getMax())) {
+        parameter.set(tmpRef);
+        return true;
+    }
+    return false;
+}
+
+//--------------------------------------------------------------
+bool ofxImGui::AddDrag(ofParameter<int>& parameter, float speed)
+{
+    auto tmpRef = parameter.get();
+    if (ImGui::DragInt(ofxImGui::GetUniqueName(parameter.getName()), &tmpRef, speed, parameter.getMin(), parameter.getMax())) {
+        parameter.set(tmpRef);
+        return true;
+    }
+    return false;
+}
+
 //--------------------------------------------------------------
 bool ofxImGui::AddDragFloatRange2(ofParameter<ofVec2f>& parameter, float speed ) {
     
