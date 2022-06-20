@@ -160,8 +160,8 @@ bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open,
             // Dont show sub things in small format
             result = ImGui::TreeNodeEx(GetUniqueName(name), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog );
         }else{
-		result = ImGui::TreeNode(GetUniqueName(name));
-	}
+            result = ImGui::TreeNode(GetUniqueName(name));
+        }
 	}
 	if (result)
 	{
@@ -185,24 +185,30 @@ void ofxImGui::EndTree(Settings& settings)
 }
 
 //--------------------------------------------------------------
-void ofxImGui::AddGroup(ofParameterGroup& group, Settings& settings )
+void ofxImGui::AddGroup(ofParameterGroup& group, Settings& settings, bool open, bool make_wrapper, bool framed_child_headers )
 {
 	bool prevWindowBlock = settings.windowBlock;
-	if (settings.windowBlock)
-	{
-		if (!ofxImGui::BeginTree(group, settings))
-		{
-			return;
-		}
-	}
-	else
-	{
-		if (!ofxImGui::BeginWindow(group.getName().c_str(), settings))
-		{
-			ofxImGui::EndWindow(settings);
-			return;
-		}
-	}
+    
+    if(make_wrapper) {
+        if (settings.windowBlock)
+        {
+            if (!ofxImGui::BeginTree(group, settings, open, framed_child_headers))
+            {
+                // End tree.
+                //ofxImGui::EndTree(settings);
+                return;
+            }
+        }
+        else
+        {
+            if (!ofxImGui::BeginWindow(group.getName().c_str(), settings))
+            {
+                ofxImGui::EndWindow(settings);
+                return;
+            }
+        }
+    }
+        
 
 	for (auto parameter : group)
 	{
@@ -211,7 +217,7 @@ void ofxImGui::AddGroup(ofParameterGroup& group, Settings& settings )
 		if (parameterGroup)
 		{
 			// Recurse through contents.
-			ofxImGui::AddGroup(*parameterGroup, settings);
+			ofxImGui::AddGroup(*parameterGroup, settings, open, true, framed_child_headers);
 			continue;
 		}
 
@@ -294,16 +300,18 @@ void ofxImGui::AddGroup(ofParameterGroup& group, Settings& settings )
 		ofLogWarning(__FUNCTION__) << "Could not create GUI element for parameter " << parameter->getName();
 	}
 
-	if (settings.windowBlock && !prevWindowBlock)
-	{
-		// End window if we created it.
-		ofxImGui::EndWindow(settings);
-	}
-	else
-	{
-		// End tree.
-		ofxImGui::EndTree(settings);
-	}
+    if(make_wrapper) {
+        if (settings.windowBlock && !prevWindowBlock)
+        {
+            // End window if we created it.
+            ofxImGui::EndWindow(settings);
+        }
+        else
+        {
+            // End tree.
+            ofxImGui::EndTree(settings);
+        }
+    }
 }
 
 #if OF_VERSION_MINOR >= 10
