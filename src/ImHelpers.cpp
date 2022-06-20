@@ -140,23 +140,28 @@ void ofxImGui::EndWindow(Settings& settings)
 }
 
 //--------------------------------------------------------------
-bool ofxImGui::BeginTree(ofAbstractParameter& parameter, Settings& settings)
+bool ofxImGui::BeginTree(ofAbstractParameter& parameter, Settings& settings, bool open, bool framed_child_headers)
 {
-	return ofxImGui::BeginTree(parameter.getName(), settings);
+	return ofxImGui::BeginTree(parameter.getName(), settings, open, framed_child_headers);
 }
 
 //--------------------------------------------------------------
-bool ofxImGui::BeginTree(const std::string& name, Settings& settings)
+bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open, bool framed_child_headers)
 {
 	bool result;
-	ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
+	ImGui::SetNextItemOpen(open, ImGuiCond_Appearing);
 	if (settings.treeLevel == 0)
 	{
 		result = ImGui::TreeNodeEx(GetUniqueName(name), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog);
 	}
 	else
 	{
+        if(framed_child_headers) {
+            // Dont show sub things in small format
+            result = ImGui::TreeNodeEx(GetUniqueName(name), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog );
+        }else{
 		result = ImGui::TreeNode(GetUniqueName(name));
+	}
 	}
 	if (result)
 	{

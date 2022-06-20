@@ -56,8 +56,8 @@ namespace ofxImGui
 	bool BeginWindow(const std::string& name, Settings& settings, ImGuiWindowFlags flags, bool * open = nullptr);
 	void EndWindow(Settings& settings);
 
-	bool BeginTree(ofAbstractParameter& parameter, Settings& settings);
-	bool BeginTree(const std::string& name, Settings& settings);
+    bool BeginTree(ofAbstractParameter& parameter, Settings& settings, bool open = true, bool framed_child_headers = true);
+	bool BeginTree(const std::string& name, Settings& settings, bool open = true, bool framed_child_headers = true);
 	void EndTree(Settings& settings);
 
 	void AddGroup(ofParameterGroup& group, Settings& settings);
