@@ -8,10 +8,11 @@
 #include "imgui.h"
 #include <stack> // Needed for Arch Linux
 
+#include "gles1CompatibilityHacks.h" // needed on rpi3 for GL_TEXTURE_RECTANGLE
+
 static const int kImGuiMargin = 10;
 
-
-
+// Todo: ScopedHelpers like in ImGuiMagnumIntegration and Cinder's ImGui
 
 namespace ofxImGui
 {
@@ -92,8 +93,7 @@ namespace ofxImGui
 	bool AddCombo(ofParameter<int>& parameter, std::vector<std::string> labels);
 	bool AddStepper(ofParameter<int>& parameter, int step = 1, int stepFast = 100);
 
-    bool AddSlider(ofParameter<int>& parameter, const std::string selectionName = "");
-	bool AddSlider(ofParameter<float>& parameter, const char* format = "%.3f", float power = 1.0f);
+	bool AddSlider(ofParameter<float>& parameter, const char* format = "%.3f", bool logarithmic = false);
 
     bool AddDrag(ofParameter<float>& parameter, float speed = 0.01);
     bool AddDrag(ofParameter<int>& parameter, float speed = 0.01);
@@ -146,6 +146,15 @@ namespace ofxImGui
 
 static ImTextureID GetImTextureID(const ofTexture& texture)
 {
+#ifdef TARGET_OPENGLES
+	if (false) // GLES only has 2d textures ? (to be verified)
+#else
+	if (texture.getTextureData().textureTarget != GL_TEXTURE_2D)
+#endif
+	{
+		
+		ofLogWarning("Warning, ImGui only supports drawing textures of type GL_TEXTURE_RECTANGLE.");
+	}
     return (ImTextureID)(uintptr_t)texture.texData.textureID;
 }
 

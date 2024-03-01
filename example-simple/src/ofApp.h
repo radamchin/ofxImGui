@@ -12,8 +12,9 @@ class ofApp : public ofBaseApp{
         ofApp() {}
 
 		void setup() {
+			ofSetLogLevel(OF_LOG_VERBOSE);
             #ifdef USE_AUTODRAW
-            gui.setup(nullptr, true, ImGuiConfigFlags_None, true );
+            gui.setup(nullptr, true, ImGuiConfigFlags_ViewportsEnable, true );
             #else
             gui.setup(nullptr, false);
             #endif
@@ -25,6 +26,10 @@ class ofApp : public ofBaseApp{
             // Start drawing to ImGui (newFrame)
 			gui.begin();
 
+		if(bDrawOfxImGuiDebug){
+			gui.drawOfxImGuiDebugWindow();
+		}
+
             // Create a new window
             ImGui::Begin("ofxImGui example-simple");
 
@@ -34,6 +39,7 @@ class ofApp : public ofBaseApp{
             // Many arguments you pass to ImGui functions need to remain valid between frames. (they are passed by reference [&])
             static bool staticBool = false;
             ImGui::Checkbox("Checkbox", &staticBool);
+            ImGui::Checkbox("Show ofxImGui Debug Window", &bDrawOfxImGuiDebug);
 
             // You can hide and show Gui parts on demand
             if(staticBool){
@@ -48,7 +54,6 @@ class ofApp : public ofBaseApp{
             ImGui::Checkbox("Draw lines", &drawLines);
             ImGui::ColorEdit3("Background color", &backGroundColor[0]);
             ImGui::SliderFloat("Float Slider", &v1, -10.f, 10.f);
-            ImGui::Text("GLFW version : %i%i%i0", GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR, GLFW_VERSION_REVISION );
 
             // Close the main window
             ImGui::End();
@@ -87,4 +92,5 @@ class ofApp : public ofBaseApp{
         float v1 = 0;
         float backGroundColor[3] = {1,1,1};
         bool drawLines = false;
+	bool bDrawOfxImGuiDebug = false;
 };

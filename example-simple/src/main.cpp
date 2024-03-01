@@ -4,6 +4,8 @@
 
 //========================================================================
 int main( ){
+	ofSetLogLevel(OF_LOG_VERBOSE);
+
     int windowWidth = 800;
     int windowHeight = 600;
 
@@ -20,10 +22,11 @@ int main( ){
     #if defined(TARGET_OSX)
     settings.setGLVersion(3,2);
     #else
-    settings.setGLVersion(4,1);
+    settings.setGLVersion(3,2);
+//    settings.setGLVersion(4,1); // Uncomment if your GPU supports it
     #endif
 #endif
-	settings.title="ofxImGui Example Debug";
+	settings.title="ofxImGui example-simple";
 	settings.setSize(windowWidth, windowHeight);
 
 	auto window1 = ofCreateWindow(settings);

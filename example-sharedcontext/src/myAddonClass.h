@@ -3,6 +3,7 @@
 #include "ofMain.h"
 
 #include "ofxImGui.h"
+#include "ImHelpers.h"
 
 class myAddonClass : public ofBaseApp
 {
@@ -10,6 +11,7 @@ public:
     virtual void setup() override;
     virtual void setup( ofxImGui::Gui& _gui );
     virtual void draw() override;
+//	virtual void exit() override; // Todo: destroy gui on exit and see what happens ?
 	void drawImGui();
 
 private:
