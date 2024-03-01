@@ -132,7 +132,17 @@ namespace ofxImGui
     void AddImage(const ofBaseHasTexture& hasTexture, const glm::vec2& size);
     void AddImage(const ofTexture& texture, const glm::vec2& size);
 #endif
+
+
+    //--------------------------------------------------------------
+    // See: https://github.com/ocornut/imgui/issues/211
+    void BeginDisabled();
+    void EndDisabled();
+
 }
+
+
+//--------------------------------------------------------------
 
 static ImTextureID GetImTextureID(const ofTexture& texture)
 {

@@ -991,3 +991,18 @@ bool ofxImGui::VectorListBox(const char* label, int* currIndex, std::vector<std:
 				   static_cast<void*>(&values), values.size());
 }
 
+
+//--------------------------------------------------------------
+// See: https://github.com/ocornut/imgui/issues/211
+// This is native in 1.8.4 - could not get working so rolled own, wait for maintainer to upgrade imgui lib
+void ofxImGui::BeginDisabled() {
+    // ImGuiItemFlags_Disabled                 = 1 << 2
+    // ImGuiItemFlags
+   // ImGui::PushItemFlag((1 << 2), true); // Manually using flag value as its private in current 1.8.1 build
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+}
+
+void ofxImGui::EndDisabled() {
+  //  ImGui::PopItemFlag();
+    ImGui::PopStyleVar();
+}
