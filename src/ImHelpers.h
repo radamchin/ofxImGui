@@ -94,6 +94,7 @@ namespace ofxImGui
 	bool AddStepper(ofParameter<int>& parameter, int step = 1, int stepFast = 100);
 
 	bool AddSlider(ofParameter<float>& parameter, const char* format = "%.3f", bool logarithmic = false);
+    bool AddSlider(ofParameter<int>& parameter, const std::string selectionName = "");
 
     bool AddDrag(ofParameter<float>& parameter, float speed = 0.01);
     bool AddDrag(ofParameter<int>& parameter, float speed = 0.01);
