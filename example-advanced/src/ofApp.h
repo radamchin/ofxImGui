@@ -67,6 +67,9 @@ class ofApp : public ofBaseApp{
                 fileTextures.push_back(texID);
             }
             imageButtonID = fileTextures.front();
+
+            // It's nice to disable escape quitting your ofApp, as ImGui also listens to escape.
+            ofSetEscapeQuitsApp(false);
         }
 
         void draw() {
@@ -89,103 +92,111 @@ class ofApp : public ofBaseApp{
             gui.begin();
 
             // Draw a menu bar
-            ImGui::BeginMainMenuBar();
+            if(ImGui::BeginMainMenuBar()){
 
-            if(ImGui::BeginMenu( "Options")){
+                if(ImGui::BeginMenu( "Options")){
 
-                ImGui::Checkbox("Show ImGui Metrics", &showMetrics);
-                ImGui::SameLine(); HelpMarker("The ImGui metrics is a gui window allowing you to inspect what is going on and how imgui is intagrated and interfaced with oF.");
+                    ImGui::Checkbox("Show ImGui Metrics", &showMetrics);
+                    ImGui::SameLine(); HelpMarker("The ImGui metrics is a gui window allowing you to inspect what is going on and how imgui is intagrated and interfaced with oF.");
 
-                ImGui::Separator();
-                ImGui::Checkbox("Show ImGui Demo", &showDemo);
-                ImGui::SameLine(); HelpMarker("The ImGui Demo Window demonstrates many gui possibilities and serves as a reference for available gui widgets, together with its source code.");
+                    ImGui::Separator();
+                    ImGui::Checkbox("Show ImGui Demo", &showDemo);
+                    ImGui::SameLine(); HelpMarker("The ImGui Demo Window demonstrates many gui possibilities and serves as a reference for available gui widgets, together with its source code.");
 
-                ImGui::Separator();
-                ImGui::Checkbox("Show ImGui FX", &showFX);
-                ImGui::SameLine(); HelpMarker("Demoscene contest !\nDemonstrates :\n - how to make an ImGui plugin\n - How to use the imgui drawlist api");
+                    ImGui::Separator();
+                    ImGui::Checkbox("Show ofxImGui Debug Window", &showOfxImGuiDebugWindow);
+                    ImGui::SameLine(); HelpMarker("Helper window for debugging and optimising your ofxImGui instance within your ofApp.\nIt can also been seen as an interactive tutorial explaining how ofxmGui is setup (for avanced users).");
 
-                ImGui::Separator();
-                ImGui::Checkbox("Draw lines", &drawLines);
-                ImGui::SameLine(); HelpMarker("An example of how to control your ofApp with ofxImGui.");
+                    ImGui::Separator();
+                    ImGui::Checkbox("Show ImGui FX", &showFX);
+                    ImGui::SameLine(); HelpMarker("Demoscene contest !\nDemonstrates :\n - how to make an ImGui plugin\n - How to use the imgui drawlist api");
 
-                ImGui::Separator();
-                ImGui::Checkbox("Show Sample Window", &showSampleWindow);
-                ImGui::SameLine(); HelpMarker("Demonstrates some advanced use cases of imgui.");
+                    ImGui::Separator();
+                    ImGui::Checkbox("Draw lines", &drawLines);
+                    ImGui::SameLine(); HelpMarker("An example of how to control your ofApp with ofxImGui.");
 
-                // Submenu
-                ImGui::Separator();
-                if(ImGui::BeginMenu( "More..." )){
-                    ImGui::MenuItem( "Something" );
-                    ImGui::MenuItem( "Something else" );
-                    ImGui::MenuItem( "Something different" );
+                    ImGui::Separator();
+                    ImGui::Checkbox("Show Sample Window", &showSampleWindow);
+                    ImGui::SameLine(); HelpMarker("Demonstrates some advanced use cases of imgui.");
+
+                    // Submenu
+                    ImGui::Separator();
+                    if(ImGui::BeginMenu( "More..." )){
+                        ImGui::MenuItem( "Something" );
+                        ImGui::MenuItem( "Something else" );
+                        ImGui::MenuItem( "Something different" );
+                        ImGui::EndMenu();
+                    }
+
+                    // Exit
+                    ImGui::Separator();
+                    if(ImGui::MenuItem( "Quit" )){
+                        ofExit();
+                    }
+
                     ImGui::EndMenu();
                 }
 
-                // Exit
-                ImGui::Separator();
-                if(ImGui::MenuItem( "Quit" )){
-                    ofExit();
-                }
+                if(ImGui::BeginMenu( "Runtime")){
 
-                ImGui::EndMenu();
-            }
-
-            if(ImGui::BeginMenu( "Runtime")){
-
-                // Full Screen
-                static bool fullScreen = false;
-                if(ImGui::Checkbox("Full screen", &fullScreen)){
-                    ofSetFullscreen(fullScreen);
-                }
-
-                // Vertical Sync
-                static bool vSync = false;
-                if(ImGui::Checkbox("Vertical Sync", &vSync)){
-                    ofSetVerticalSync(vSync);
-                }
-
-                ImGui::Separator();
-
-                // Resolution changer
-                static int resolution[2];
-                resolution[0]=ofGetWidth();
-                resolution[1]=ofGetHeight();
-                std::string resString = ofToString(resolution[0]).append(" x ").append(ofToString(resolution[1]));
-                if(ImGui::BeginCombo("Resolution", resString.c_str())){
-                    if(ImGui::Selectable("800 × 600")){
-                        ofSetWindowShape(800,600);
+                    // Full Screen
+                    static bool fullScreen = false;
+                    if(ImGui::Checkbox("Full screen", &fullScreen)){
+                        ofSetFullscreen(fullScreen);
                     }
-                    if(ImGui::Selectable("1024 × 768")){
-                        ofSetWindowShape(1024, 768);
-                    }
-                    if(ImGui::Selectable("1366 × 768")){
-                        ofSetWindowShape(1366, 768);
-                    }
-                    if(ImGui::InputInt2("Custom", resolution)){
-                        ofSetWindowShape(resolution[0],resolution[1]);
-                    }
-                    ImGui::EndCombo();
-                }
 
-                // FPS
-                static int appFPS=30;//ofGetTargetFrameRate();
-                if(ImGui::DragInt("FPS Target", &appFPS, 1.f, 10)){ // Minimum set to 10 because double click is not detected below it
-                    ofSetFrameRate(appFPS);
-                    appFPS=ofGetTargetFrameRate(); // re-sync value with oF
-                }
-                if(ImGui::IsItemHovered()){
-                    ImGui::BeginTooltip();
-                    ImGui::Text("(double-click to edit)");
-                    ImGui::EndTooltip();
-                }
-                static char avgFPSString[28]={0};
-                sprintf(avgFPSString, "FPS : %.2f average", avgFPS);
-                ImGui::PlotHistogram("FPS Histogram", realFPS, plotSize, 0, avgFPSString, 0, 60);
+                    // Vertical Sync
+                    static bool vSync = false;
+                    if(ImGui::Checkbox("Vertical Sync", &vSync)){
+                        ofSetVerticalSync(vSync);
+                    }
 
-                ImGui::EndMenu();
-            }
+                    ImGui::Separator();
+
+                    // Resolution changer
+                    static int resolution[2];
+                    resolution[0]=ofGetWidth();
+                    resolution[1]=ofGetHeight();
+                    std::string resString = ofToString(resolution[0]).append(" x ").append(ofToString(resolution[1]));
+                    if(ImGui::BeginCombo("Resolution", resString.c_str())){
+                        if(ImGui::Selectable("800 × 600")){
+                            ofSetWindowShape(800,600);
+                        }
+                        if(ImGui::Selectable("1024 × 768")){
+                            ofSetWindowShape(1024, 768);
+                        }
+                        if(ImGui::Selectable("1366 × 768")){
+                            ofSetWindowShape(1366, 768);
+                        }
+                        if(ImGui::InputInt2("Custom", resolution)){
+                            ofSetWindowShape(resolution[0],resolution[1]);
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    // FPS
+                    static int appFPS=30;//ofGetTargetFrameRate();
+                    if(ImGui::DragInt("FPS Target", &appFPS, 1.f, 10)){ // Minimum set to 10 because double click is not detected below it
+                        ofSetFrameRate(appFPS);
+                        appFPS=ofGetTargetFrameRate(); // re-sync value with oF
+                    }
+                    if(ImGui::IsItemHovered()){
+                        ImGui::BeginTooltip();
+                        ImGui::Text("(double-click to edit)");
+                        ImGui::EndTooltip();
+                    }
+                    static char avgFPSString[28]={0};
+                    sprintf(avgFPSString, "FPS : %.2f average", avgFPS);
+                    ImGui::PlotHistogram("FPS Histogram", realFPS, plotSize, 0, avgFPSString, 0, 60);
+
+                    ImGui::EndMenu();
+                }
+            } // End menu visible
 
             ImGui::EndMainMenuBar();
+
+            // Start a transparent docking space to allow docked windows within the ofAppWindow
+            ImGuiID dockNodeID = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
             // Line drawing logic
             glm::vec2 windowPos;
@@ -206,8 +217,21 @@ class ofApp : public ofBaseApp{
                     "All windows except this one should restore their size and positions when re-opening this ofApp.\n\n"\
                     "The graphics around this window are pimped by oF. Use the options menu to draw lines instead.\n\n"
                 );
+                ImGui::Text("Use the options menu to enable different demo components.");
                 ImGui::Text("There are some help indicators around.");
                 ImGui::SameLine(); HelpMarker("Bravo, you got it !");
+
+                ImGui::Spacing();
+                ImGui::SeparatorText("Layout");
+#ifdef OFXIMGUI_BACKEND_GLFW
+                ImGui::TextWrapped("ImGui windows can be poped-out i using the GLFW");
+#elif defined(OFXIMGUI_BACKEND_OPENFRAMEWORKS)
+                ImGui::TextWrapped("You're using the custom OpenFrameworks backend. Windows cannot pop-out of the ofAppWindow, but you can still combine and layout imgui windows.");
+#else
+                ImGui::TextDisabled("Unknown backend = Unknown layouts !");
+#endif
+                ImGui::TextWrapped("Try dragging around the imgui windows by their title and trop them within other windows to make the layout yours !");
+
             }
             // Query ImGui window state
             // Note: Helpers help convert ImVec2 to glm::Vec2
@@ -312,7 +336,7 @@ class ofApp : public ofBaseApp{
 
                     //GetImTextureID is a static function defined in Helpers.h that accepts ofTexture, ofImage, or GLuint
                     ImGui::Dummy(ImVec2(10,10));
-                    if(ImGui::ImageButton(GetImTextureID(imageButtonID), ImVec2(200, 200))){
+                    if(ImGui::ImageButton("imagebutton", GetImTextureID(imageButtonID), ImVec2(200, 200))){
                            ofLog() << "PRESSED";
                     }
                     //or do it manually
@@ -337,7 +361,11 @@ class ofApp : public ofBaseApp{
                 ImGui::SetNextWindowPos(ImVec2(ofGetWindowPositionX()+ofGetWidth()-350,ofGetWindowPositionY()+30), ImGuiCond_FirstUseEver );
                 ImGui::ShowMetricsWindow( &showMetrics );
             }
+
             if(showDemo) ImGui::ShowDemoWindow(&showDemo);
+
+            if(showOfxImGuiDebugWindow) gui.drawOfxImGuiDebugWindow(&showOfxImGuiDebugWindow);
+
             if(showFX){
                 // Window position is only set on the first launch
                 ImGui::SetNextWindowPos(ImVec2(ofGetWindowPositionX()+ofGetWidth()-350,ofGetWindowPositionY()+ofGetHeight()-230), ImGuiCond_FirstUseEver );
@@ -356,6 +384,15 @@ class ofApp : public ofBaseApp{
             glm::vec2 ofWindowTopRight    = glm::vec2(ofGetWindowWidth(),0);
             glm::vec2 ofWindowBottomLeft  = glm::vec2(0                 ,ofGetWindowHeight());
             glm::vec2 ofWindowBottomRight = glm::vec2(ofGetWindowWidth(),ofGetWindowHeight());
+
+            // Space changes ofWindow to imguiViewport.
+            if( !ofGetKeyPressed(' ')){
+                ofRectangle viewport = gui.getMainWindowViewportRect();
+                ofWindowTopLeft     = viewport.getTopLeft();
+                ofWindowTopRight    = viewport.getTopRight();
+                ofWindowBottomLeft  = viewport.getBottomLeft();
+                ofWindowBottomRight = viewport.getBottomRight();
+            }
 
             if(drawLines){
                 ofSetLineWidth(lineThickness);
@@ -458,6 +495,7 @@ class ofApp : public ofBaseApp{
         bool showDemo         = false;
         bool showFX           = false;
         bool showSampleWindow = true;
+        bool showOfxImGuiDebugWindow = false;
 
         float v = 0;
 
