@@ -24,7 +24,10 @@ VERSION_1_90_1=2dc85e6e # 1.90.1
 VERSION_1_90_9=3369cbd2 # 1.90.9
 VERSION_1_91_0=139e99ca # 1.91.0
 VERSION_1_91_5=368123a # 1.91.5
-VERSION_SHA=$VERSION_1_91_5
+VERSION_1_91_9b=4806a19 # 1.91.5
+VERSION_1_92_0=adfa536 # 1.92.0
+VERSION_1_92_1=44aa9a4 # 1.92.1
+VERSION_SHA=$VERSION_1_92_1
 # ------------------
 
 echo "\nHello,"
@@ -153,7 +156,7 @@ else
 	# This causes the native backend to fail linking, the of-version hasn't got glfwGetMonitorWorkarea which was added only in the final version
 	# before: #define GLFW_HAS_MONITOR_WORK_AREA      (GLFW_VERSION_COMBINED >= 3300) // 3.3+ glfwGetMonitorWorkarea
 	# after : #define GLFW_HAS_MONITOR_WORK_AREA      (GLFW_VERSION_COMBINED >= 3301) // 3.3+ glfwGetMonitorWorkarea
-	gsed -i '/^#define GLFW_HAS_MONITOR_WORK_AREA      (GLFW_VERSION_COMBINED >= 3300) \/\/ 3.3+ glfwGetMonitorWorkarea$/i #if defined(TARGET_OSX) || defined(TARGET_WIN32) \/\/ BEGIN CUSTOM OFXIMGUI LINES\n#define GLFW_HAS_MONITOR_WORK_AREA      (GLFW_VERSION_COMBINED >= 3301) \/\/ 3.3+ glfwGetMonitorWorkarea\n#else' ./imgui/backends/imgui_impl_glfw.cpp
+	gsed -i '/^#define GLFW_HAS_MONITOR_WORK_AREA      (GLFW_VERSION_COMBINED >= 3300) \/\/ 3.3+ glfwGetMonitorWorkarea$/i #if defined(TARGET_OSX) || defined(TARGET_WIN32) \/\/ BEGIN CUSTOM OFXIMGUI LINES\n#define GLFW_HAS_MONITOR_WORK_AREA      (GLFW_VERSION_COMBINED >= OFXIMGUI_VERSION_GLFW_3300) \/\/ 3.3+ glfwGetMonitorWorkarea\n#else' ./imgui/backends/imgui_impl_glfw.cpp
 	gsed -i '/^#define GLFW_HAS_MONITOR_WORK_AREA      (GLFW_VERSION_COMBINED >= 3300) \/\/ 3.3+ glfwGetMonitorWorkarea$/a #endif \/\/ END CUSTOM OFXIMGUI LINES' ./imgui/backends/imgui_impl_glfw.cpp
 
 	# Obj-c ARC fixes // of_v0.12.0+

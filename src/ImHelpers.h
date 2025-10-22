@@ -47,6 +47,7 @@ namespace ofxImGui
 	static WindowOpen windowOpen;
 
 	bool IsMouseOverGui();
+	bool IsAnyGuiActive();
 
 	const char * GetUniqueName(ofAbstractParameter& parameter);
 	const char * GetUniqueName(const std::string& candidate);
@@ -167,7 +168,6 @@ static ImTextureID GetImTextureID(const ofBaseHasTexture& hasTexture)
 
 static ImTextureID GetImTextureID(GLuint glID)
 {
-    
     return (ImTextureID)(uintptr_t)glID;
 
 }
