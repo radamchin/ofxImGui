@@ -198,6 +198,7 @@ bool ofxImGui::AddParameter(ofParameter<ParameterType>& parameter)
 	}
 	if (info == typeid(bool))
 	{
+		// fixme : this is so wrong ! See #139
 		if (ImGui::Checkbox(GetUniqueName(parameter), (bool *)&tmpRef))
 		{
 			parameter.set(tmpRef);

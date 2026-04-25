@@ -193,9 +193,11 @@ namespace ofxImGui
 		bool wantsCaptureMouse() const;
 		bool wantsCaptureKeyboard() const;
 
+		std::string iniFileName = ofToDataPath("imgui.ini"); // Default = in data root. Can be set to custom file BEFORE calling gui.setup()
+
     private:
         void render();
-		static void initialiseForWindow();
+        static void initialiseForWindow();
 
 //#if defined (OFXIMGUI_FORCE_OF_BACKEND)
 //        EngineOpenFrameworks engine;
