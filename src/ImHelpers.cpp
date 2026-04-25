@@ -140,25 +140,32 @@ void ofxImGui::EndWindow(Settings& settings)
 }
 
 //--------------------------------------------------------------
-bool ofxImGui::BeginTree(ofAbstractParameter& parameter, Settings& settings, bool open, bool framed_child_headers)
+bool ofxImGui::BeginTree(ofAbstractParameter& parameter, Settings& settings, bool open, bool framed_child_headers, bool click_arrow_open )
 {
-	return ofxImGui::BeginTree(parameter.getName(), settings, open, framed_child_headers);
+	return ofxImGui::BeginTree(parameter.getName(), settings, open, framed_child_headers, click_arrow_open);
 }
 
 //--------------------------------------------------------------
-bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open, bool framed_child_headers)
+bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open, bool framed_child_headers, bool click_arrow_open )
 {
 	bool result;
+	
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog;
+	
+	if(click_arrow_open) {
+		flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+	}
+	
 	ImGui::SetNextItemOpen(open, ImGuiCond_Appearing);
 	if (settings.treeLevel == 0)
 	{
-		result = ImGui::TreeNodeEx(GetUniqueName(name), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog);
+		result = ImGui::TreeNodeEx(GetUniqueName(name), flags);
 	}
 	else
 	{
         if(framed_child_headers) {
             // Dont show sub things in small format
-            result = ImGui::TreeNodeEx(GetUniqueName(name), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog );
+            result = ImGui::TreeNodeEx(GetUniqueName(name), flags );
         }else{
             result = ImGui::TreeNode(GetUniqueName(name));
         }
