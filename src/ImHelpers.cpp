@@ -158,7 +158,7 @@ bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open,
 {
 	bool result;
 	
-	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog;
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog | ImGuiTreeNodeFlags_AllowOverlap;
 	
 	if(click_arrow_open) {
 		flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
