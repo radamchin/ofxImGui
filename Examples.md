@@ -2,6 +2,8 @@
 
 Here's an overview of the bundled examples.
 
+Some example IDE files may need to be regenerated using the ProjectGenerator, specially for older openFrameworks versions. Be aware that some project configuration flags can be stripped in this process; you need to manually restore them.
+
 ## example-simple
 
 A very **minimal example** of how to use imgui within OpenFrameworks.
@@ -25,7 +27,7 @@ Shows advanced use of imgui within OF, below are some covered topics :
 ## example-demo    
 
 Shows the imgui demo window, very useful for **discovering all the available widgets** and their respective ImGui API code to implement them. To be explored together with the ImGui demo's source code.  
-An easier alternative is to use an online web-assembly-precompiled ImGui-Demo explorer like [pthom/imgui_manual_online](https://pthom.github.io/imgui_manual_online/).
+An easier alternative is to use an online web-assembly-precompiled ImGui-Demo explorer like [pthom/imgui_explorer](https://pthom.github.io/imgui_explorer/) or the [full examples explorer](https://imgui-bundle.pages.dev/explorer/).
 
 ## example-fonts
 
@@ -58,3 +60,14 @@ How to use one ImGui instance in a **multiwindow ofApp**. GUIs are isolated. Som
 
 Shows how to **use an ofxImGui addon**. Requires [ofxImGuizmo](https://github.com/nariakiiwatani/ofxImGuizmo.git).  
 For pure ImGui addons (many more), see example-advanced.
+
+## example-conway
+
+Playful example implementing the Conway Way Of Life while demonstratring how to use ofxImGui::Canvas and ofxImGui::viewport.  
+It also compiles on Emscripten.
+
+## example-pixeleditor
+
+Simple custom pixel editor featuring the `ImGuiDrawList` usage with `Canvas` and `Viewport`.  
+It also compiles on Emscripten.
+

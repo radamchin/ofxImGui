@@ -24,7 +24,7 @@ namespace ofxImGui
 	GLuint EngineGLFW::g_FontTexture = 0;
 
 	//--------------------------------------------------------------
-	void EngineGLFW::setup(ofAppBaseWindow* _window, ImGuiContext* _imguiContext, bool autoDraw)
+	void EngineGLFW::setup(ofAppBaseWindow* _window, ImGuiContext* _imguiContext, bool autoDraw, bool autoContentScale)
 	{
         if (isSetup){
 #ifdef OFXIMGUI_DEBUG
@@ -110,6 +110,31 @@ namespace ofxImGui
 			#endif
         }
 
+        // Apply OS content scale for HiDPI / 4K displays (GLFW backend only).
+        // FontGlobalScale upscales the already-rasterised atlas; for sharper results
+        // rebuild fonts at (size * scale) instead. ScaleAllSizes keeps padding/rounding
+        // proportional. Both are no-ops when xscale == 1 (non-HiDPI displays).
+        // Skipped when the framebuffer is larger than the window (macOS Retina): there the
+        // window is measured in points and DisplayFramebufferScale already renders at the
+        // display's resolution, so scaling again would double everything.
+		if (autoContentScale) {
+			float xs = 1.f, ys = 1.f;
+			glfwGetWindowContentScale(curWin, &xs, &ys);
+			int windowWidth = 0, windowHeight = 0, framebufferWidth = 0, framebufferHeight = 0;
+			glfwGetWindowSize(curWin, &windowWidth, &windowHeight);
+			glfwGetFramebufferSize(curWin, &framebufferWidth, &framebufferHeight);
+			bool framebufferScales = windowWidth > 0 && framebufferWidth > windowWidth;
+			if (xs > 1.f && !framebufferScales) {
+				ImGuiStyle& style = ImGui::GetStyle();
+#if IMGUI_VERSION_NUM < 19200
+				io.FontGlobalScale = xs;
+#else
+				style.FontScaleMain = xs;
+#endif
+				style.ScaleAllSizes(xs);
+			}
+		}
+
 		isSetup = true;
 
 	} 
@@ -170,13 +195,17 @@ namespace ofxImGui
 
 	//--------------------------------------------------------------
     void EngineGLFW::render()
-	{
-
-		// Ensure GL is in a compatible state
-#if IMGUI_VERSION_NUM <= 19210 && IMGUI_VERSION_NUM >= 19200
-		// Note: required for ofApps that use ofTexture which can set/leave this to a different value.
+	{	
+		// 1.92.0 and 1.92.1 upload without setting unpack state.
+		// 1.92.2 does this inside UpdateTexture. 1.92.9 also restores the previous values.
+		// Very version-specific fix, see #136 and #145 (keep in case, now the backend does it)
+#if IMGUI_VERSION_NUM >= 19200 && IMGUI_VERSION_NUM <= 19210
+#   ifdef GL_UNPACK_ROW_LENGTH // required on some rpis (gles2)
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-		glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+#   endif
+#   ifdef GL_UNPACK_ALIGNMENT
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#   endif
 #endif
 
         if (ofIsGLProgrammableRenderer()) {
@@ -263,11 +292,13 @@ namespace ofxImGui
 
 		ofLogNotice("EngineGLFW::setup()") << "Replaced the openFrameworks' GLFW event listeners by the ofxImGui ones which will then call the OF and ImGui ones while adding multi-context support.";
 	#else
-		ofLogNotice("EngineGLFW::setup()") << "Replaced the openFrameworks' GLFW event listeners by the imgui_impl_glfw ones. You will not have multi-window nor multi-context support. This can be enabled by defining OFXIMGUI_GLFW_FIX_MULTICONTEXT_SECONDARY_VP=1.";
 		#if OFXIMGUI_GLFW_FIX_MULTICONTEXT_SECONDARY_VP == 1
+		ofLogNotice("EngineGLFW::setup()") << "Replaced the openFrameworks' GLFW event listeners by the imgui_impl_glfw ones. Multi-context support is enabled via OFXIMGUI_GLFW_FIX_MULTICONTEXT_SECONDARY_VP. For full multi-window support, define OFXIMGUI_GLFW_FIX_MULTICONTEXT_PRIMARY_VP=1.";
 		// Register window at 2ndary
 		mainGLFWWindow = glfwWindowPtr;
 		ImGui_ImplGlfw_ScopedContext::RegisterWindowContext(glfwWindowPtr, this->imguiContext);
+		#else
+		ofLogNotice("EngineGLFW::setup()") << "Replaced the openFrameworks' GLFW event listeners by the imgui_impl_glfw ones. You will not have multi-window nor multi-context support. This can be enabled by defining OFXIMGUI_GLFW_FIX_MULTICONTEXT_SECONDARY_VP=1 or OFXIMGUI_GLFW_FIX_MULTICONTEXT_PRIMARY_VP=1.";
 		#endif
 	#endif
 		// - - - - - - - - - - -
