@@ -148,15 +148,30 @@ void ofxImGui::EndWindow(Settings& settings)
 }
 
 //--------------------------------------------------------------
-bool ofxImGui::BeginTree(ofAbstractParameter& parameter, Settings& settings, bool open, bool framed_child_headers, bool click_arrow_open )
+bool ofxImGui::BeginTree(ofAbstractParameter& parameter, Settings& settings, bool open, bool framed_child_headers, bool click_arrow_open, ofColor bg_tint, bool defer_tinted_body)
 {
-	return ofxImGui::BeginTree(parameter.getName(), settings, open, framed_child_headers, click_arrow_open);
+	return ofxImGui::BeginTree(parameter.getName(), settings, open, framed_child_headers, click_arrow_open, bg_tint, defer_tinted_body);
 }
 
+
+struct TintedGroupState {
+	bool tinted = false;
+	float window_padding_x = 0.0f;
+	float indent_spacing = 0.0f;
+	bool defer_tinted_body = false;
+	bool tinted_body_open = false;
+	ImU32 tint_color = 0;
+};
+
+static std::vector<TintedGroupState> g_tinted_group_stack;
+static int g_active_tinted_group_depth = 0;
+
 //--------------------------------------------------------------
-bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open, bool framed_child_headers, bool click_arrow_open )
+bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open, bool framed_child_headers, bool click_arrow_open, ofColor bg_tint, bool defer_tinted_body)
 {
 	bool result;
+	const bool should_tint_bg = (bg_tint != ofColor::white);
+	const ImU32 tint_color = IM_COL32(bg_tint.r, bg_tint.g, bg_tint.b, bg_tint.a);
 	
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoAutoOpenOnLog | ImGuiTreeNodeFlags_AllowOverlap;
 	
@@ -165,22 +180,48 @@ bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open,
 	}
 	
 	ImGui::SetNextItemOpen(open, ImGuiCond_Appearing);
+	// Offset nested header contents (arrow/text) only when inside a tinted group body.
+	// This avoids over-indenting children under non-tinted parents.
+	const bool apply_child_header_content_indent = (settings.treeLevel > 0) && (g_active_tinted_group_depth > 0);
+	const float child_header_content_indent = (apply_child_header_content_indent && !g_tinted_group_stack.empty())
+		// Inside tinted bodies we already have tree indent reapplied; only add residual padding.
+		? std::max(0.0f, g_tinted_group_stack.back().window_padding_x - g_tinted_group_stack.back().indent_spacing)
+		: 0.0f;
+	if (apply_child_header_content_indent && child_header_content_indent > 0.0f) {
+		const ImVec2 frame_padding = ImGui::GetStyle().FramePadding;
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(frame_padding.x + child_header_content_indent, frame_padding.y));
+	}
 	if (settings.treeLevel == 0)
 	{
 		result = ImGui::TreeNodeEx(GetUniqueName(name), flags);
 	}
 	else
 	{
-        if(framed_child_headers) {
-            // Dont show sub things in small format
-            result = ImGui::TreeNodeEx(GetUniqueName(name), flags );
-        }else{
-            result = ImGui::TreeNode(GetUniqueName(name));
-        }
+		if(framed_child_headers) {
+			// Dont show sub things in small format
+			result = ImGui::TreeNodeEx(GetUniqueName(name), flags );
+		}else{
+			result = ImGui::TreeNode(GetUniqueName(name));
+		}
 	}
+	if (apply_child_header_content_indent && child_header_content_indent > 0.0f) {
+		ImGui::PopStyleVar();
+	}
+	
 	if (result)
 	{
 		settings.treeLevel += 1;
+		TintedGroupState state;
+		state.tinted = should_tint_bg;
+		state.defer_tinted_body = defer_tinted_body;
+		state.tinted_body_open = false;
+		state.tint_color = tint_color;
+		g_tinted_group_stack.push_back(state);
+		
+		if (should_tint_bg && !defer_tinted_body) {
+			BeginTintedGroup(tint_color);
+			g_tinted_group_stack.back().tinted_body_open = true;
+		}
 
 		// Push a new list of names onto the stack.
 		windowOpen.usedNames.push(std::vector<std::string>());
@@ -189,41 +230,78 @@ bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open,
 }
 
 //--------------------------------------------------------------
+void ofxImGui::BeginTreeBody()
+{
+	if (g_tinted_group_stack.empty()) {
+		return;
+	}
+
+	auto& scope = g_tinted_group_stack.back();
+	if (!scope.tinted || !scope.defer_tinted_body || scope.tinted_body_open) {
+		return;
+	}
+
+	BeginTintedGroup(scope.tint_color);
+	scope.tinted_body_open = true;
+}
+
+//--------------------------------------------------------------
 void ofxImGui::EndTree(Settings& settings)
 {
+	if (settings.treeLevel <= 0) {
+		ofLogWarning(__FUNCTION__) << "Not inside a tree block!";
+		return;
+	}
+
+	const bool has_scope = !g_tinted_group_stack.empty();
+	const bool scope_is_tinted_and_open = has_scope ? (g_tinted_group_stack.back().tinted && g_tinted_group_stack.back().tinted_body_open) : false;
+
+	if (!has_scope) {
+		ofLogWarning(__FUNCTION__) << "Tinted-group scope stack out of sync";
+	}
+	
+	if(scope_is_tinted_and_open) {
+		EndTintedGroup();
+	}
+	
 	ImGui::TreePop();
 	
 	settings.treeLevel = std::max(0, settings.treeLevel - 1);
+	if (has_scope) {
+		g_tinted_group_stack.pop_back();
+	}
 
 	// Clear the list of names from the stack.
-	windowOpen.usedNames.pop();
+	if (!windowOpen.usedNames.empty()) {
+		windowOpen.usedNames.pop();
+	}
 }
 
 //--------------------------------------------------------------
 void ofxImGui::AddGroup(ofParameterGroup& group, Settings& settings, bool open, bool make_wrapper, bool framed_child_headers )
 {
 	bool prevWindowBlock = settings.windowBlock;
-    
-    if(make_wrapper) {
-        if (settings.windowBlock)
-        {
-            if (!ofxImGui::BeginTree(group, settings, open, framed_child_headers))
-            {
-                // End tree.
-                //ofxImGui::EndTree(settings);
-                return;
-            }
-        }
-        else
-        {
-            if (!ofxImGui::BeginWindow(group.getName().c_str(), settings))
-            {
-                ofxImGui::EndWindow(settings);
-                return;
-            }
-        }
-    }
-        
+	
+	if(make_wrapper) {
+		if (settings.windowBlock)
+		{
+			if (!ofxImGui::BeginTree(group, settings, open, framed_child_headers))
+			{
+				// End tree.
+				//ofxImGui::EndTree(settings);
+				return;
+			}
+		}
+		else
+		{
+			if (!ofxImGui::BeginWindow(group.getName().c_str(), settings))
+			{
+				ofxImGui::EndWindow(settings);
+				return;
+			}
+		}
+	}
+		
 
 	for (auto parameter : group)
 	{
@@ -311,27 +389,27 @@ void ofxImGui::AddGroup(ofParameterGroup& group, Settings& settings, bool open, 
 			ofxImGui::AddParameter(*parameterString);
 			continue;
 		}
-        auto parameterVoid = std::dynamic_pointer_cast<ofParameter<void>>(parameter);
-        if (parameterVoid)
-        {
-            ofxImGui::AddParameter(*parameterVoid);
-            continue;
-        }
+		auto parameterVoid = std::dynamic_pointer_cast<ofParameter<void>>(parameter);
+		if (parameterVoid)
+		{
+			ofxImGui::AddParameter(*parameterVoid);
+			continue;
+		}
 		ofLogWarning(__FUNCTION__) << "Could not create GUI element for parameter " << parameter->getName();
 	}
 
-    if(make_wrapper) {
-        if (settings.windowBlock && !prevWindowBlock)
-        {
-            // End window if we created it.
-            ofxImGui::EndWindow(settings);
-        }
-        else
-        {
-            // End tree.
-            ofxImGui::EndTree(settings);
-        }
-    }
+	if(make_wrapper) {
+		if (settings.windowBlock && !prevWindowBlock)
+		{
+			// End window if we created it.
+			ofxImGui::EndWindow(settings);
+		}
+		else
+		{
+			// End tree.
+			ofxImGui::EndTree(settings);
+		}
+	}
 }
 
 #if OF_VERSION_MINOR >= 10
@@ -613,56 +691,52 @@ bool ofxImGui::AddSlider(ofParameter<float>& parameter, const char* format, bool
 //--------------------------------------------------------------
 bool ofxImGui::AddSlider(ofParameter<int>& parameter, const std::string selectionName)
 {
-    int tmpRef = parameter.get();
-    
-    const char * selNm = &selectionName[0];
-    
-    if( selectionName.empty() ) {
-        // Pass the variable value;
-        selNm = &(ofToString(tmpRef)[0]);
-    }
-    
-    if( ImGui::SliderInt(GetUniqueName(parameter), (int*)&tmpRef, parameter.getMin(), parameter.getMax(), selNm ) )
-    {
-        parameter.set(tmpRef);
-        return true;
-    }
-    return false;
+	int tmpRef = parameter.get();
+
+	// ImGui expects a printf-style format string here; keep pointer lifetime stable.
+	const char * selNm = selectionName.empty() ? "%d" : selectionName.c_str();
+	
+	if( ImGui::SliderInt(GetUniqueName(parameter), (int*)&tmpRef, parameter.getMin(), parameter.getMax(), selNm ) )
+	{
+		parameter.set(tmpRef);
+		return true;
+	}
+	return false;
 }
 
 //--------------------------------------------------------------
 bool ofxImGui::AddDrag(ofParameter<float>& parameter, float speed)
 {
-    auto tmpRef = parameter.get();
-    if (ImGui::DragFloat(ofxImGui::GetUniqueName(parameter.getName()), &tmpRef, speed, parameter.getMin(), parameter.getMax())) {
-        parameter.set(tmpRef);
-        return true;
-    }
-    return false;
+	auto tmpRef = parameter.get();
+	if (ImGui::DragFloat(ofxImGui::GetUniqueName(parameter.getName()), &tmpRef, speed, parameter.getMin(), parameter.getMax())) {
+		parameter.set(tmpRef);
+		return true;
+	}
+	return false;
 }
 
 //--------------------------------------------------------------
 bool ofxImGui::AddDrag(ofParameter<int>& parameter, float speed)
 {
-    auto tmpRef = parameter.get();
-    if (ImGui::DragInt(ofxImGui::GetUniqueName(parameter.getName()), &tmpRef, speed, parameter.getMin(), parameter.getMax())) {
-        parameter.set(tmpRef);
-        return true;
-    }
-    return false;
+	auto tmpRef = parameter.get();
+	if (ImGui::DragInt(ofxImGui::GetUniqueName(parameter.getName()), &tmpRef, speed, parameter.getMin(), parameter.getMax())) {
+		parameter.set(tmpRef);
+		return true;
+	}
+	return false;
 }
 
 //--------------------------------------------------------------
 bool ofxImGui::AddDragFloatRange2(ofParameter<ofVec2f>& parameter, float speed ) {
-    
-    auto tmpRef = parameter.get();
-    if( ImGui::DragFloatRange2(GetUniqueName(parameter), &tmpRef.x, &tmpRef.y, speed, parameter.getMin().x, parameter.getMax().y, "Min:%.1f", "Max:%.1f", ImGuiSliderFlags_AlwaysClamp) ) {
-        
-        parameter.set(tmpRef);
-        return true;
-    }
-       
-    return false;
+	
+	auto tmpRef = parameter.get();
+	if( ImGui::DragFloatRange2(GetUniqueName(parameter), &tmpRef.x, &tmpRef.y, speed, parameter.getMin().x, parameter.getMax().y, "Min:%.1f", "Max:%.1f", ImGuiSliderFlags_AlwaysClamp) ) {
+		
+		parameter.set(tmpRef);
+		return true;
+	}
+	   
+	return false;
 }
 
 
@@ -963,13 +1037,13 @@ void ofxImGui::AddImage(const ofBaseHasTexture& hasTexture, const ofVec2f& size)
 //--------------------------------------------------------------
 void ofxImGui::AddImage(const ofTexture& texture, const ofVec2f& size)
 {
-    if (texture.getTextureData().textureTarget == GL_TEXTURE_2D){
-        ImTextureID textureID = GetImTextureID(texture);
-        ImGui::Image(textureID, size);
-    }
-    else {
-        ImGui::TextDisabled("Error: can't display GL_TEXTURE_RECTANGLE textures.\nPlease use GL_TEXTURE_2D.");
-    }
+	if (texture.getTextureData().textureTarget == GL_TEXTURE_2D){
+		ImTextureID textureID = GetImTextureID(texture);
+		ImGui::Image(textureID, size);
+	}
+	else {
+		ImGui::TextDisabled("Error: can't display GL_TEXTURE_RECTANGLE textures.\nPlease use GL_TEXTURE_2D.");
+	}
 }
 
 #if OF_VERSION_MINOR >= 10
@@ -983,13 +1057,13 @@ void ofxImGui::AddImage(const ofBaseHasTexture& hasTexture, const glm::vec2& siz
 //--------------------------------------------------------------
 void ofxImGui::AddImage(const ofTexture& texture, const glm::vec2& size)
 {
-    if (texture.getTextureData().textureTarget == GL_TEXTURE_2D){
-        ImTextureID textureID = GetImTextureID(texture);
-        ImGui::Image(textureID, size);
-    }
-    else {
-        ImGui::TextDisabled("Error: can't display GL_TEXTURE_RECTANGLE textures.\nPlease use GL_TEXTURE_2D.");
-    }
+	if (texture.getTextureData().textureTarget == GL_TEXTURE_2D){
+		ImTextureID textureID = GetImTextureID(texture);
+		ImGui::Image(textureID, size);
+	}
+	else {
+		ImGui::TextDisabled("Error: can't display GL_TEXTURE_RECTANGLE textures.\nPlease use GL_TEXTURE_2D.");
+	}
 }
 
 #endif
@@ -1020,13 +1094,68 @@ bool ofxImGui::VectorListBox(const char* label, int* currIndex, std::vector<std:
 // See: https://github.com/ocornut/imgui/issues/211
 // This is native in 1.8.4 - could not get working so rolled own, wait for maintainer to upgrade imgui lib
 void ofxImGui::BeginDisabled() {
-    // ImGuiItemFlags_Disabled                 = 1 << 2
-    // ImGuiItemFlags
+	// ImGuiItemFlags_Disabled                 = 1 << 2
+	// ImGuiItemFlags
    // ImGui::PushItemFlag((1 << 2), true); // Manually using flag value as its private in current 1.8.1 build
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
 }
 
 void ofxImGui::EndDisabled() {
   //  ImGui::PopItemFlag();
-    ImGui::PopStyleVar();
+	ImGui::PopStyleVar();
+}
+
+//--------------------------------------------------------------
+
+void ofxImGui::BeginTintedGroup( ImU32 color, float rounding , float padding ) {
+	if (g_tinted_group_stack.empty()) {
+		ofLogWarning(__FUNCTION__) << "No active tinted-group scope";
+		return;
+	}
+	auto& scope = g_tinted_group_stack.back();
+	
+	// Get the exact padding & indent shifts
+	scope.window_padding_x = ImGui::GetStyle().WindowPadding.x;
+	scope.indent_spacing = ImGui::GetStyle().IndentSpacing;
+
+	// Temporarily back out of the TreeNode indentation so the child starts on the far left
+	ImGui::Unindent(scope.indent_spacing);
+
+	// Strip the internal child padding so the color fills the edges perfectly
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, color);
+	ImGui::PushID((int)g_tinted_group_stack.size());
+	
+	ImGui::BeginChild("##GroupBg", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+	++g_active_tinted_group_depth;
+	
+	// Restore tree indent only; adding window padding here over-indents nested trees.
+	ImGui::Indent(scope.indent_spacing);
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f); // Optional: minor vertical breathing room
+	ImGui::BeginGroup();
+	
+}
+
+void ofxImGui::EndTintedGroup() {
+	if (g_tinted_group_stack.empty()) {
+		ofLogWarning(__FUNCTION__) << "No active tinted-group scope";
+		return;
+	}
+	const auto scope = g_tinted_group_stack.back();
+	
+	 ImGui::Unindent(scope.indent_spacing);
+	 ImGui::EndGroup();
+	 if (g_active_tinted_group_depth > 0) {
+		--g_active_tinted_group_depth;
+	 }
+
+	 //  Clean up everything
+	 ImGui::EndChild();
+	 ImGui::PopID();
+	 ImGui::PopStyleColor();
+	 ImGui::PopStyleVar();
+
+	 // Re-indent back to safety so following UI elements align properly
+	 ImGui::Indent(scope.indent_spacing);
 }

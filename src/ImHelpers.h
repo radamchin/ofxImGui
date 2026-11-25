@@ -16,11 +16,11 @@ static const int kImGuiMargin = 10;
 
 namespace ofxImGui
 {
-    
-    bool VectorCombo(const char* label, int* currIndex, std::vector<std::string>& values);
-    bool VectorListBox(const char* label, int* currIndex, std::vector<std::string>& values);
+	
+	bool VectorCombo(const char* label, int* currIndex, std::vector<std::string>& values);
+	bool VectorListBox(const char* label, int* currIndex, std::vector<std::string>& values);
 
-    
+	
 	struct WindowOpen
 	{
 		std::stack<std::vector<std::string>> usedNames;
@@ -58,8 +58,9 @@ namespace ofxImGui
 	bool BeginWindow(const std::string& name, Settings& settings, ImGuiWindowFlags flags, bool * open = nullptr);
 	void EndWindow(Settings& settings);
 
-    bool BeginTree(ofAbstractParameter& parameter, Settings& settings, bool open = true, bool framed_child_headers = true, bool click_arrow_open = true);
-	bool BeginTree(const std::string& name, Settings& settings, bool open = true, bool framed_child_headers = true, bool click_arrow_open = true);
+	bool BeginTree(ofAbstractParameter& parameter, Settings& settings, bool open = true, bool framed_child_headers = true, bool click_arrow_open = true, ofColor bg_tint = ofColor::white, bool defer_tinted_body = false);
+	bool BeginTree(const std::string& name, Settings& settings, bool open = true, bool framed_child_headers = true, bool click_arrow_open = true, ofColor bg_tint = ofColor::white, bool defer_tinted_body = false);
+	void BeginTreeBody();
 	void EndTree(Settings& settings);
 
 	void AddGroup(ofParameterGroup& group, Settings& settings, bool open = true, bool make_wrapper = true, bool framed_child_headers = true );
@@ -95,14 +96,14 @@ namespace ofxImGui
 	bool AddStepper(ofParameter<int>& parameter, int step = 1, int stepFast = 100);
 
 	bool AddSlider(ofParameter<float>& parameter, const char* format = "%.3f", bool logarithmic = false);
-    bool AddSlider(ofParameter<int>& parameter, const std::string selectionName = "");
+	bool AddSlider(ofParameter<int>& parameter, const std::string selectionName = "");
 
-    bool AddDrag(ofParameter<float>& parameter, float speed = 0.01);
-    bool AddDrag(ofParameter<int>& parameter, float speed = 0.01);
+	bool AddDrag(ofParameter<float>& parameter, float speed = 0.01);
+	bool AddDrag(ofParameter<int>& parameter, float speed = 0.01);
 
-    bool AddDragFloatRange2(ofParameter<ofVec2f>& parameter, float speed = 0.01 );
+	bool AddDragFloatRange2(ofParameter<ofVec2f>& parameter, float speed = 0.01 );
 
-    
+	
 	bool AddRange(const std::string& name, ofParameter<int>& parameterMin, ofParameter<int>& parameterMax, int speed = 1);
 	bool AddRange(const std::string& name, ofParameter<float>& parameterMin, ofParameter<float>& parameterMax, float speed = 0.01f);
 #if OF_VERSION_MINOR >= 10
@@ -131,15 +132,20 @@ namespace ofxImGui
 	void AddImage(const ofBaseHasTexture& hasTexture, const ofVec2f& size);
 	void AddImage(const ofTexture& texture, const ofVec2f& size);
 #if OF_VERSION_MINOR >= 10
-    void AddImage(const ofBaseHasTexture& hasTexture, const glm::vec2& size);
-    void AddImage(const ofTexture& texture, const glm::vec2& size);
+	void AddImage(const ofBaseHasTexture& hasTexture, const glm::vec2& size);
+	void AddImage(const ofTexture& texture, const glm::vec2& size);
 #endif
 
 
-    //--------------------------------------------------------------
-    // See: https://github.com/ocornut/imgui/issues/211
-    void BeginDisabled();
-    void EndDisabled();
+	//--------------------------------------------------------------
+	// See: https://github.com/ocornut/imgui/issues/211
+	void BeginDisabled();
+	void EndDisabled();
+
+
+	//-----
+	void BeginTintedGroup(ImU32 color, float rounding = 4.0f, float padding = 4.0f);
+	void EndTintedGroup();
 
 }
 
@@ -155,20 +161,20 @@ static ImTextureID GetImTextureID(const ofTexture& texture)
 #endif
 	{
 		
-        ofLogWarning("Warning, ImGui only supports drawing textures of type GL_TEXTURE_2D.");
+		ofLogWarning("Warning, ImGui only supports drawing textures of type GL_TEXTURE_2D.");
 	}
-    return (ImTextureID)(uintptr_t)texture.texData.textureID;
+	return (ImTextureID)(uintptr_t)texture.texData.textureID;
 }
 
 static ImTextureID GetImTextureID(const ofBaseHasTexture& hasTexture)
 {
-    
-    return GetImTextureID(hasTexture.getTexture());
+	
+	return GetImTextureID(hasTexture.getTexture());
 }
 
 static ImTextureID GetImTextureID(GLuint glID)
 {
-    return (ImTextureID)(uintptr_t)glID;
+	return (ImTextureID)(uintptr_t)glID;
 
 }
 
