@@ -180,37 +180,40 @@ bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open,
 	}
 	
 	ImGui::SetNextItemOpen(open, ImGuiCond_Appearing);
+	
 	// Offset nested header contents (arrow/text) only when inside a tinted group body.
 	// This avoids over-indenting children under non-tinted parents.
 	const bool apply_child_header_content_indent = (settings.treeLevel > 0) && (g_active_tinted_group_depth > 0);
+	
 	const float child_header_content_indent = (apply_child_header_content_indent && !g_tinted_group_stack.empty())
+		? std::max(0.0f, g_tinted_group_stack.back().window_padding_x - g_tinted_group_stack.back().indent_spacing) : 0.0f;
 		// Inside tinted bodies we already have tree indent reapplied; only add residual padding.
-		? std::max(0.0f, g_tinted_group_stack.back().window_padding_x - g_tinted_group_stack.back().indent_spacing)
-		: 0.0f;
+	
 	if (apply_child_header_content_indent && child_header_content_indent > 0.0f) {
 		const ImVec2 frame_padding = ImGui::GetStyle().FramePadding;
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(frame_padding.x + child_header_content_indent, frame_padding.y));
 	}
-	if (settings.treeLevel == 0)
-	{
+	
+	if (settings.treeLevel == 0) {
 		result = ImGui::TreeNodeEx(GetUniqueName(name), flags);
-	}
-	else
-	{
+	} else {
+		
 		if(framed_child_headers) {
 			// Dont show sub things in small format
 			result = ImGui::TreeNodeEx(GetUniqueName(name), flags );
 		}else{
 			result = ImGui::TreeNode(GetUniqueName(name));
 		}
+		
 	}
+	
 	if (apply_child_header_content_indent && child_header_content_indent > 0.0f) {
 		ImGui::PopStyleVar();
 	}
 	
-	if (result)
-	{
+	if (result) {
 		settings.treeLevel += 1;
+		
 		TintedGroupState state;
 		state.tinted = should_tint_bg;
 		state.defer_tinted_body = defer_tinted_body;
@@ -230,8 +233,8 @@ bool ofxImGui::BeginTree(const std::string& name, Settings& settings, bool open,
 }
 
 //--------------------------------------------------------------
-void ofxImGui::BeginTreeBody()
-{
+void ofxImGui::BeginTreeBody() {
+	
 	if (g_tinted_group_stack.empty()) {
 		return;
 	}
@@ -243,6 +246,7 @@ void ofxImGui::BeginTreeBody()
 
 	BeginTintedGroup(scope.tint_color);
 	scope.tinted_body_open = true;
+	
 }
 
 //--------------------------------------------------------------
@@ -1121,18 +1125,35 @@ void ofxImGui::BeginTintedGroup( ImU32 color, float rounding , float padding ) {
 	// Temporarily back out of the TreeNode indentation so the child starts on the far left
 	ImGui::Unindent(scope.indent_spacing);
 
+	// BeginChild is the next item after the tree header; cancel that vertical ItemSpacing
+	// so the tinted background starts immediately under the header frame.
+	const float item_spacing_y = ImGui::GetStyle().ItemSpacing.y;
+	// Framed tree headers include extra horizontal frame padding beyond window padding.
+	const float bg_expand_x = scope.window_padding_x / 2;//  + ImGui::GetStyle().ItemSpacing.x;  + ImGui::GetStyle().FramePadding.x;
+	if (item_spacing_y > 0.0f) {
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - item_spacing_y - 1.0f); // +1.0f to avoid a hairline gap at the top of the child
+	}
+	const float child_width = ImGui::GetContentRegionAvail().x + (bg_expand_x * 2.0f);
+	if (bg_expand_x > 0.0f) {
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - bg_expand_x);
+	}
+
 	// Strip the internal child padding so the color fills the edges perfectly
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, color);
 	ImGui::PushID((int)g_tinted_group_stack.size());
 	
-	ImGui::BeginChild("##GroupBg", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+	ImGui::BeginChild("##GroupBg", ImVec2(child_width, 0), ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 	++g_active_tinted_group_depth;
 	
-	// Restore tree indent only; adding window padding here over-indents nested trees.
-	ImGui::Indent(scope.indent_spacing);
-	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f); // Optional: minor vertical breathing room
+	// Restore only the tree indent so nested tinted tree headers align with parent content.
+	ImGui::Indent(scope.indent_spacing); // + bg_expand_x);
+
+	// Reintroduce top breathing room for first body item, after the background starts.
+	if (item_spacing_y > 0.0f) {
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + item_spacing_y * 1.5f);
+	}
 	ImGui::BeginGroup();
 	
 }
@@ -1144,7 +1165,8 @@ void ofxImGui::EndTintedGroup() {
 	}
 	const auto scope = g_tinted_group_stack.back();
 	
-	 ImGui::Unindent(scope.indent_spacing);
+	 ImGui::Unindent(scope.indent_spacing);	 //+ scope.window_padding_x);
+
 	 ImGui::EndGroup();
 	 if (g_active_tinted_group_depth > 0) {
 		--g_active_tinted_group_depth;
